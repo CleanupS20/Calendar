@@ -7,10 +7,11 @@ This is a daily calendar which will clear every day and will provide areas for m
 
 ## Visuals
 
-
+![Alt text](https://github.com/CleanupS20/Calendar/blob/main/Assets/Images/Calendar%20Screenshot.gif)
 
 ## Site
 
+https://cleanups20.github.io/Calendar/
 
 
 ## Installation
