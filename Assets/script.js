@@ -1,23 +1,118 @@
-Wrap all code that interacts with the DOM in a call to jQuery to ensure that
-// the code isn't run until the browser has finished rendering all the elements
-// in the html.
-$(function () {
-  // TODO: Add a listener for click events on the save button. This code should
-  // use the id in the containing time-block as a key to save the user input in
-  // local storage. HINT: What does `this` reference in the click listener
-  // function? How can DOM traversal be used to get the "hour-x" id of the
-  // time-block containing the button that was clicked? How might the id be
-  // useful when saving the description in local storage?
-  //
-  // TODO: Add code to apply the past, present, or future class to each time
-  // block by comparing the id to the current hour. HINTS: How can the id
-  // attribute of each time-block be used to conditionally add or remove the
-  // past, present, and future classes? How can Day.js be used to get the
-  // current hour in 24-hour time?
-  //
-  // TODO: Add code to get any user input that was saved in localStorage and set
-  // the values of the corresponding textarea elements. HINT: How can the id
-  // attribute of each time-block be used to do this?
-  //
-  // TODO: Add code to display the current date in the header of the page.
+// Global Variables
+var userDate = $("#currentDay");
+var container = $("#container");
+var today = moment().format("dddd, MMMM Do YYYY");
+var day = moment().startOf('day');
+// Variable storing data input by user.
+var savedData = {
+  value: [""],
+  expiry: moment().format('dddd, MMMM Do YYYY')
+};
+// Check local storage for information in the createHour.
+if (localStorage.getItem("calItems") === null) {
+  localStorage.setItem("calItems", JSON.stringify(savedData));
+  savedData = JSON.parse(localStorage.getItem("calItems").split(","));
+} else {
+  savedData = localStorage.getItem("calItems");
+  savedData = JSON.parse(savedData.split(","));
+
+//  createHour clears daily. statment checks for information for the date, when the date changes, information is cleared.
+  if (savedData.expiry !== moment().format('dddd, MMMM Do YYYY')) {
+    localStorage.removeItem("calItems");
+    localStorage.setItem("calItems", JSON.stringify({
+      value: [""],
+      expiry: moment().format('dddd, MMMM Do YYYY')
+    }));
+    savedData = JSON.parse(localStorage.getItem("calItems").split(","));
+    alert("Yesterdays events have been cleared");
+  }
+}
+
+// Generate hour blocks starting at 9 am
+var createHour = function () {
+  for (let i = 0; i < 9; i++) {
+    // Time element
+    var timeBlock = $("<div></div>");
+    timeBlock.addClass("time-block row");
+
+    // Hour element
+    var hour = $("<div></div>");
+    hour.addClass("hour");
+    timeBlock.append(hour);
+
+    //Appointment area
+    var description = $("<div></div>");
+    description.addClass("textarea description");
+    description.attr("data-time", 9 + i)
+    // Adds placeholder instructing user to type
+    var textArea = $("<textarea id='appointment' placeholder='Type reminder here....'></textarea>");
+    if (savedData !== null) {
+      textArea.text(savedData.value[i]);
+    } else {
+      textArea.text("");
+    }
+    // append textarea to description and description to timeBlock
+    textArea.attr("data-value", i);
+    description.append(textArea);
+    timeBlock.append(description);
+
+    // creates the save the button
+    var saveBtn = $("<div></div>");
+    saveBtn.addClass("saveBtn");
+    saveBtn.append("<i id='save' class='fas fa-save'></i>");
+    timeBlock.append(saveBtn);
+
+    // Push timeBlock to container
+    container.append(timeBlock);
+  }
+}
+
+function populateCalendar() {
+  // Sets the Date on the Header
+  userDate.text(today);
+  createHour();
+
+  // variables that work with putting correct time for each time slot
+  var hour = 9;
+  var afternoon = 1;
+  var time = Number.parseInt(moment().format('H'));
+
+  // auto generates the correct color coding for the time block aswell as correct
+  // times for each timeBlock
+  for (let i = 0; i < container.children().length; i++) {
+    if (hour > 12) {
+      container.children().eq(i).children().eq(0).text(afternoon + "pm");
+      afternoon++;
+    } else {
+      if (hour === 12) {
+        container.children().eq(i).children().eq(0).text(hour + "pm");
+        hour++;
+      } else {
+        container.children().eq(i).children().eq(0).text(hour + "am");
+        hour++;
+      }
+    }
+
+    // grabs the data-time value attribute
+    var dataTime = Number.parseInt(container.children().eq(i).children().eq(1).attr("data-time"));
+
+    // Choose color based on time
+    if (time < dataTime) {
+      container.children().eq(i).children().eq(1).addClass("future")
+    } else if (time === dataTime) {
+      container.children().eq(i).children().eq(1).addClass("present")
+    } else {
+      container.children().eq(i).children().eq(1).addClass("past")
+    }
+  }
+}
+
+container.on("click", "#save", function (event) {
+  var newArr = savedData;
+  var index = $(event.target).parent().parent().children().eq(1).children().attr("data-value");
+  var text = $(event.target).parent().parent().children().eq(1).children().val();
+  newArr.value[index] = text;
+  localStorage.setItem("calItems", JSON.stringify(newArr));
 });
+
+populateCalendar();
